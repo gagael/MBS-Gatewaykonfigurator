@@ -1,0 +1,146 @@
+﻿@page "/Gerätevorlagen/{ProjektId:guid}"
+@using MBS_Gatewaykonfigurator.Models
+@inject GerätevorlageService GerätevorlageService
+@inject ProjektService ProjektService
+@inject NavigationManager Navigation
+@* DialogService *@
+@inject IDialogService DialogService
+
+<MudText Typo="Typo.h2" Align="Align.Center">Gerätevorlagen im Projekt:@project.Name </MudText>
+
+<MudPaper Class="p-1">
+    <MudText>Ausgewählt (@selectedItems?.Count): @(selectedItems == null ? "" : string.Join(", ", selectedItems.OrderBy(x => x.Name).Select(x => x.Name)))</MudText>
+
+    <MudTable Items="vorlagen" Dense="true" FixedHeader="true" Height="75vh" MultiSelection="true" Hover="true" Bordered="true" Striped="true" @bind-SelectedItems="selectedItems">
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<Gerätevorlage, object>(x => x.Name)">Name</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Gerätevorlage, object>(x => x.QuellProtokoll)">Quell-Protokoll</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Gerätevorlage, object>(x => x.ZielProtokoll)">Ziel-Protokoll</MudTableSortLabel></MudTh>
+            <MudTh>Aktionen</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudTextField @bind-Value="context.Name"
+                              For="@(() => context.Name)"
+                              Required="true"
+                              Immediate="false" />
+            </MudTd>
+            <MudTd>
+                <MudTextField @bind-Value="context.QuellProtokoll"
+                              For="@(() => context.QuellProtokoll)"
+                              Disabled="true"
+                              Required="true"
+                              Immediate="false" />
+            </MudTd>
+            <MudTd>
+                <MudTextField @bind-Value="context.ZielProtokoll"
+                              For="@(() => context.ZielProtokoll)"
+                              Disabled="true"
+                              ReadOnly="true"
+                              Required="true"
+                              Immediate="false" />
+            </MudTd>
+            <MudTd>
+                <MudButton Variant="Variant.Text" Color="Color.Info" OnClick="@(() => NavigateToVorlage(context))">Öffnen</MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <MudToolBar>
+        <MudSpacer />
+        <MudIconButton OnClick="CopyVorlagen" Icon="@Icons.Material.Outlined.ContentCopy" />
+        <MudIconButton OnClick="AddVorlage" Icon="@Icons.Material.Outlined.Add" />
+        <MudIconButton OnClick="RemoveVorlagen" Icon="@Icons.Material.Outlined.Remove" />
+        <MudIconButton Icon="@Icons.Material.Outlined.Save" Color="Color.Primary" OnClick="Speichern" />
+    </MudToolBar>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public Guid ProjektId { get; set; }
+
+    private HashSet<Gerätevorlage> selectedItems = new();
+    private List<Gerätevorlage> vorlagen = new();
+    private List<Gerätevorlage> vorlagenGelöscht = new();
+    private Projekt project = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var alleVorlagen = await GerätevorlageService.LoadAsync();
+        vorlagen = alleVorlagen
+            .Where(v => v.ProjektId == ProjektId)
+            .ToList();
+
+        project = await ProjektService.LoadOneAsync(ProjektId) ?? new();
+    }
+
+    private void AddVorlage()
+    {
+        vorlagen.Add(new Gerätevorlage { ProjektId = ProjektId, Name = "Neue Vorlage" });
+    }
+
+    private async Task RemoveVorlagen()
+    {
+        //Lösch-Dialog
+        var parameters = new DialogParameters<DeleteDialog>
+        {
+            { x => x.ContentText, "Möchten Sie diese Einträge wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden." },
+            { x => x.ButtonText, "Löschen" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Löschen", parameters, options);
+
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled)
+        {
+            return;
+        }
+
+        foreach (var vorlage in selectedItems.ToList())
+        {
+            vorlagen.Remove(vorlage);
+
+            //löschen beim speichern vorbereiten
+            // await GerätevorlageService.DeleteAsync(vorlage.Id.ToString());
+            vorlagenGelöscht.Add(vorlage);
+        }
+        selectedItems.Clear();
+    }
+
+    private void CopyVorlagen()
+    {
+        if (selectedItems.Count == 0) return;
+
+        var copies = selectedItems.Select(gv => CloneService.Clone(gv)).ToList();
+
+        foreach (var gv in copies)
+        {
+            gv!.Id = Guid.NewGuid();
+            gv!.Name += " (Kopie)";
+        }
+
+        vorlagen.AddRange(copies!);
+    }
+
+    private async Task Speichern()
+    {
+        //speichern
+        await GerätevorlageService.SaveAsync(vorlagen);
+        
+        //löschen
+        foreach (var gv in vorlagenGelöscht)
+        {
+            await GerätevorlageService.DeleteAsync(gv.Id.ToString());
+        }
+    }
+
+    private async Task NavigateToVorlage(Gerätevorlage vorlage)
+    {
+        await Speichern();
+        Navigation.NavigateTo($"/Gerätevorlage/{vorlage.Id}");
+    }
+}

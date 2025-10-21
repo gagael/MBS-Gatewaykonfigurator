@@ -1,0 +1,204 @@
+﻿@page "/"
+@using MBS_Gatewaykonfigurator.Models;
+@using MBS_Gatewaykonfigurator.Models.MBS
+
+@* ProjektServices *@
+@inject ProjektService ProjektService
+@inject GatewayService GatewayService
+@inject GerätevorlageService GerätevorlageService
+
+@* Navigation *@
+@inject NavigationManager Navigation;
+@* DialogService *@
+@inject IDialogService DialogService
+
+<MudText Typo="Typo.h2" Align="Align.Center">Projekte</MudText>
+
+<MudPaper Class="p-1">
+    <MudText>Ausgewählt (@selectedItems?.Count): @(selectedItems == null ? "" : string.Join(", ", selectedItems.OrderBy(x => x.Name).Select(x => x.Name)))</MudText>
+    <MudForm @ref="form" Model="@projects">
+    <MudTable Items="projects" Dense="true" FixedHeader="true" Height="75vh" MultiSelection="true" Hover="true" Bordered="true" Striped="true" @bind-SelectedItems="selectedItems">
+        <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<Projekt, object>(x => x.Name)">Projekt</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<Projekt, object>(x => x.Beschreibung)">Beschreibung</MudTableSortLabel></MudTh>
+                <MudTh>Aktionen</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudTextField @bind-Value="context.Name" Required Immediate="false"
+                              For="@(() => context.Name)" />
+            </MudTd>
+            <MudTd>
+                <MudTextField @bind-Value="context.Beschreibung" Immediate="false"
+                              For="@(() => context.Beschreibung)" />
+            </MudTd>
+            <MudTd>
+                <MudButton Variant="Variant.Text" Color="Color.Info" OnClick="@(() => NavigateToGateways(context))">Gateways</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Info" OnClick="@(() => NavigateToGerätevorlage(context))">Gerätevorlagen</MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    </MudForm>
+
+    <MudToolBar>
+        <MudSpacer />
+        <MudIconButton OnClick="CopyProjekte" Icon="@Icons.Material.Outlined.ContentCopy" />
+        <MudIconButton OnClick="AddProjekt" Icon="@Icons.Material.Outlined.Add" />
+        <MudIconButton OnClick="RemoveProjekte" Icon="@Icons.Material.Outlined.Remove" />
+        <MudIconButton Icon="@Icons.Material.Outlined.Save" Color="Color.Primary" OnClick="Speichern" />
+    </MudToolBar>
+</MudPaper>
+
+@code {
+    private MudForm form = new();
+    private HashSet<Projekt> selectedItems = new HashSet<Projekt>();
+    private List<Projekt> projects = new();
+    private List<Gateway> gateways = new();
+    private List<Gerätevorlage> templates = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        projects = await ProjektService.LoadAsync() ?? new();
+        gateways = await GatewayService.LoadAsync() ?? new();
+        templates = await GerätevorlageService.LoadAsync() ?? new();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await form.Validate();
+    }
+
+
+    private void AddProjekt()
+    {
+        projects.Add(new Projekt());
+    }
+
+    private async Task RemoveProjekte()
+    {
+
+        //Lösch-Dialog
+        var parameters = new DialogParameters<DeleteDialog>
+        {
+            { x => x.ContentText, "Möchten Sie diese Einträge wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden." },
+            { x => x.ButtonText, "Löschen" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Löschen", parameters, options);
+
+
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled)
+        {
+            return;
+        }
+
+        foreach (var projekt in selectedItems.ToList()) // Avoid modifying while iterating
+        {
+            // 1. Gateways des Projekts löschen
+            if (gateways != null)
+            {
+                var projektGateways = gateways.Where(g => g.ProjektId == projekt.Id).ToList();
+                foreach (var gw in projektGateways)
+                {
+                    gateways.Remove(gw);
+                    await GatewayService.DeleteAsync(gw.Id.ToString());
+                }
+            }
+
+            // 2. Gerätevorlagen des Projekts löschen
+            if (templates != null)
+            {
+                var projektVorlagen = templates.Where(t => t.ProjektId == projekt.Id).ToList();
+                foreach (var gv in projektVorlagen)
+                {
+                    templates.Remove(gv);
+                    await GerätevorlageService.DeleteAsync(gv.Id.ToString());
+                }
+            }
+
+            // 3. Projekt löschen
+            if (projects != null)
+            {
+                projects.Remove(projekt);
+                await ProjektService.DeleteAsync(projekt.Id.ToString());
+            }
+
+
+        }
+
+        selectedItems.Clear();
+    }
+
+
+    private void CopyProjekte()
+    {
+        if (selectedItems.Count == 0) return;
+
+        foreach (var projekt in selectedItems)
+        {
+            // neues Projekt mit neuer Id erstellen
+            var newProjekt = CloneService.Clone(projekt);
+            newProjekt.Id = Guid.NewGuid();
+            newProjekt.Name = projekt.Name + " (Kopie)";
+
+            // Gateways zum Projekt finden und kopieren
+            var projektGateways = gateways.Where(g => g.ProjektId == projekt.Id).ToList();
+            foreach (var gw in projektGateways)
+            {
+                var newGateway = CloneService.Clone(gw);
+                newGateway!.Id = Guid.NewGuid();
+                newGateway!.ProjektId = newProjekt.Id;
+
+                gateways.Add(newGateway);
+            }
+           
+
+            // Gerätevorlagen zum Projekt finden und kopieren
+            var projektGerätevorlagen = templates.Where(t => t.ProjektId == projekt.Id).ToList();
+            foreach (var gv in projektGerätevorlagen)
+            {
+                var newGV = CloneService.Clone(gv);
+                newGV!.Id = Guid.NewGuid();
+                newGV!.ProjektId = newProjekt.Id;
+
+                templates.Add(newGV);
+            }
+
+            projects.Add(newProjekt);
+        }
+    }
+
+    private async Task Speichern()
+    {
+        await form.Validate();
+
+        if (projects != null)
+            await ProjektService.SaveAsync(projects.ToList());
+
+        if (gateways != null)
+            await GatewayService.SaveAsync(gateways.ToList());
+
+        if (templates != null)
+            await GerätevorlageService.SaveAsync(templates.ToList());
+    }
+
+
+
+
+    async Task NavigateToGateways(Projekt projekt)
+    {
+        await Speichern();
+        Navigation.NavigateTo($"/Projekt/{projekt.Id}");
+    }
+
+    async Task NavigateToGerätevorlage(Projekt projekt)
+    {
+        await Speichern();
+        Navigation.NavigateTo($"/Gerätevorlagen/{projekt.Id}");
+    }
+}

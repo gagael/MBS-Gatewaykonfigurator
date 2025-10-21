@@ -1,0 +1,175 @@
+﻿@page "/Projekt/{Id:guid}"
+@using MBS_Gatewaykonfigurator.Models
+@inject GatewayService GatewayService
+@inject ProjektService ProjektService
+@inject NavigationManager Navigation
+@* DialogService *@
+@inject IDialogService DialogService
+
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject CommunityToolkit.Maui.Storage.IFolderPicker FolderPicker
+
+<MudText Typo="Typo.h2" Align="Align.Center">Gateways im Projekt:@projekt?.Name </MudText>
+
+<MudPaper Class="p-1">
+    <MudText>Ausgewählt (@selectedGateways?.Count): 
+        @(selectedGateways == null ? "" : string.Join(", ", selectedGateways.OrderBy(x => x.Name).Select(x => x.Name)))
+    </MudText>
+    <MudForm @ref="form" Model=@gateways>
+    <MudTable Items="gateways" Dense="true" FixedHeader="true" Height="75vh" MultiSelection="true" Hover="true" Bordered="true" Striped="true" @bind-SelectedItems="selectedGateways">
+        <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<Gateway, object>(x => x.Name)">Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<Gateway, object>(x => x.Beschreibung)">Beschreibung</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<Gateway, object>(x => x.GeräteId)">Geräte Id</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<Gateway, object>(x => x.AnzahlDispatch)">Anzahl Dispatch</MudTableSortLabel></MudTh>
+                <MudTh>Aktionen</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudTextField @bind-Value="context.Name" Immediate="false" Required
+                              For="@(() => context.Name)" />
+            </MudTd>
+            <MudTd>
+                <MudTextField @bind-Value="context.Beschreibung" Immediate="false" Required
+                              For="@(() => context.Beschreibung)" />
+            </MudTd>
+            <MudTd>
+                <MudNumericField @bind-Value="context.GeräteId" Immediate="false"
+                                 For="@(() => context.GeräteId)" />
+            </MudTd>
+            <MudTd>
+                @context.AnzahlDispatch
+            </MudTd>
+            <MudTd>
+                <MudButton Variant="Variant.Text" Color="Color.Info" OnClick="@(() => NavigateToDatenpunkte(context))">
+                    Datenpunkte
+                </MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Info" OnClick="@(() => NavigateToGlobalenDatenpunkte(context))">
+                    Globale Datenpunkte
+                </MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Info" OnClick="@(() => Generieren(context))">
+                    Export
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    </MudForm>
+
+
+    <MudToolBar>
+        <MudSpacer />
+        <MudIconButton OnClick="CopyGateways" Icon="@Icons.Material.Outlined.ContentCopy" />
+        <MudIconButton OnClick="AddGateway" Icon="@Icons.Material.Outlined.Add" />
+        <MudIconButton OnClick="RemoveGateways" Icon="@Icons.Material.Outlined.Remove" />
+        <MudIconButton OnClick="Speichern" Icon="@Icons.Material.Outlined.Save" Color="Color.Primary" />
+    </MudToolBar>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; } // Projekt-Id
+
+    private MudForm form = new();
+
+    private HashSet<Gateway> selectedGateways = new();
+    private List<Gateway> gateways = new();
+    private Projekt projekt = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var allGateways = await GatewayService.LoadAsync() ?? new ();
+        gateways = allGateways.Where(g => g != null && g.ProjektId == Id).ToList();
+        projekt = await ProjektService.LoadOneAsync(Id) ?? new();
+
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await form.Validate();
+    }
+
+    private void AddGateway()
+    {
+        gateways.Add(new Gateway
+        {
+            ProjektId = Id,
+            Name = "Neues Gateway"
+        });
+    }
+
+    private async Task RemoveGateways()
+    {   
+        //Lösch-Dialog
+        var parameters = new DialogParameters<DeleteDialog>
+        {
+            { x => x.ContentText, "Möchten Sie diese Einträge wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden." },
+            { x => x.ButtonText, "Löschen" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Löschen", parameters, options);
+
+
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled)
+        {
+            return;
+        }
+
+        foreach (var gw in selectedGateways.ToList())
+        {
+            gateways.Remove(gw);
+            await GatewayService.DeleteAsync(gw.Id.ToString());
+        }
+        selectedGateways.Clear();
+    }
+
+    private void CopyGateways()
+    {
+        if (selectedGateways.Count == 0) return;
+
+        var copies = selectedGateways.Select(gw => CloneService.Clone(gw)).ToList();
+
+        foreach (var gw in copies)
+        {
+            gw!.Id = Guid.NewGuid();
+            gw!.ProjektId = Id;
+            gw!.Name += " (Kopie)";
+
+        }
+
+        gateways.AddRange(copies!);
+    }
+
+    private async Task Speichern()
+    {
+        await form.Validate();
+        await GatewayService.SaveAsync(gateways);
+    }
+
+    private async Task Generieren(Gateway gw)
+    {
+        await Export.Generieren(gw, new GerätevorlageService(), Snackbar, FolderPicker);
+        //speichert die AnzahlDispatch
+        await Speichern();
+    }
+
+    async Task NavigateToDatenpunkte(Gateway gateway)
+    {
+        await GatewayService.SaveOneAsync(gateway);
+        Navigation.NavigateTo($"/Gateway/{gateway.Id}");
+    }
+
+
+    async Task NavigateToGlobalenDatenpunkte(Gateway gateway)
+    {
+        await GatewayService.SaveOneAsync(gateway);
+        Navigation.NavigateTo($"/GlobaleDatenpunkte/{gateway.Id}");
+    }
+
+}

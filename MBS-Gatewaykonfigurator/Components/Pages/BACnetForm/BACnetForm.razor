@@ -1,0 +1,233 @@
+﻿@using MBS_Gatewaykonfigurator.Components.Pages.BACnetForm.Types
+@using MBS_Gatewaykonfigurator.Components.Pages.MbsForm
+@using MBS_Gatewaykonfigurator.Models.BACnet
+@using MBS_Gatewaykonfigurator.Models.BACnet.Types
+
+<MbsForm Model="Model" />
+<MudForm @ref="form" Model="@Model">
+<MudPaper Class="pa-4 mb-4">
+
+    <MudText Typo="Typo.h6">BACnet</MudText>
+
+    <MudGrid>
+
+        @*             <!-- GeräteID -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="uint?"
+                          @bind-Value="Model.GeräteID"
+                          For="@(() => Model.GeräteID)"
+                          Label="Geräte ID"
+                          Immediate="true"
+                          Variant="Variant.Outlined" />
+        </MudItem> *@
+
+        <!-- Typ (Enum Select) -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="BacNet.Types"
+                       @bind-Value="Model.TypBacNet"
+                       For="@(() => Model.TypBacNet)"
+                       Label="Typ"
+                       Required="true"
+                       Immediate=true
+                       Variant="Variant.Outlined">
+                @foreach (var t in Enum.GetValues(typeof(BacNet.Types)).Cast<BacNet.Types>())
+                {
+                    <MudSelectItem Value="@t">@($"{t} ({(int)t})")</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        @* ObjektNummer nur für NC *@
+        @if (Model.TypBacNet == BacNet.Types.NC)
+        {
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="uint"
+                                 @bind-Value="Model.ObjektNummer"
+                                 For="@(() => Model.ObjektNummer)"
+                                 Label="Objekt Nummer"
+                                 Min="0"
+                                 Max="255"
+                                 Immediate="true"
+                                 Variant="Variant.Outlined" />
+            </MudItem>
+        }
+        else
+        {
+            Model.ObjektNummer = 0;
+        }
+
+    </MudGrid>
+
+    <MudDivider Class="my-4" />
+       
+    @* NotificationClass *@
+    @if (Model.TypBacNet == BacNet.Types.NC)
+    {
+        if (Model.NotificationClass == null)
+        {
+            Model.NotificationClass = new NotificationClass();
+        }
+
+        <NotificationClassEdit Model="Model.NotificationClass" />
+    }
+    else
+    {
+        Model.NotificationClass = null;
+    }
+
+    @* Analog *@
+    @if (Model.TypBacNet == BacNet.Types.AI || Model.TypBacNet == BacNet.Types.AV || Model.TypBacNet == BacNet.Types.AO || Model.TypBacNet == BacNet.Types.LAV || Model.TypBacNet == BacNet.Types.IV || Model.TypBacNet == BacNet.Types.PIV)
+    {
+        if (Model.Analog == null)
+        {
+            Model.Analog = new Analog();
+        }
+
+        <AnalogEdit Model="Model.Analog" />
+    }
+    else
+    {
+        Model.Analog = null;
+    }
+
+    @* Binary *@
+    @if (Model.TypBacNet == BacNet.Types.BI || Model.TypBacNet == BacNet.Types.BV || Model.TypBacNet == BacNet.Types.BO)
+    {
+        if (Model.Binary == null)
+        {
+            Model.Binary = new Binary();
+        }
+
+        <BinaryEdit Model="Model.Binary" />
+    }
+    else
+    {
+        Model.Binary = null;
+    }
+
+    @* Multistate *@
+    @if (Model.TypBacNet == BacNet.Types.MI || Model.TypBacNet == BacNet.Types.MV || Model.TypBacNet == BacNet.Types.MO)
+    {
+        if (Model.Multistate == null)
+        {
+            Model.Multistate = new Multistate();
+        }
+
+        <MulistateEdit Model="Model.Multistate" />
+    }
+    else
+    {
+        Model.Multistate = null;
+    }
+
+    @* Calender *@
+    @if (Model.TypBacNet == BacNet.Types.CA)
+    {
+        if (Model.Calender == null)
+        {
+            Model.Calender = new Calender();
+        }
+
+        <CalenderEdit Model="Model.Calender" />
+    }
+    else
+    {
+        Model.Calender = null;
+    }
+
+    @* FAILURE *@
+    @if (Model.TypBacNet == BacNet.Types.FAILURE)
+    {
+            Model.Trendlog = null;
+            Model.Schedule = null;
+            Model.EventEnrollment = null;
+            isTrendlogEnabled = false;
+            isScheduleEnabled = false;
+            isEventEnrollmentEnabled = false;
+    }
+    else
+    {
+        @* Trendlog *@
+        <MudCheckBox T="bool" Label="Trendlog" @bind-Value=" isTrendlogEnabled" />
+        @if (isTrendlogEnabled)
+        {
+            if (Model.Trendlog == null)
+            {
+                Model.Trendlog = new TrendLog();
+            }
+            <TrendlogEdit Model="Model.Trendlog" />
+        }
+        else
+        {
+            Model.Trendlog = null;
+        }
+
+        @* Schedule *@
+        <MudCheckBox T="bool" Label="Schedule" @bind-Value=" isScheduleEnabled" />
+        @if (isScheduleEnabled)
+        {
+            if (Model.Schedule == null)
+            {
+                Model.Schedule = new Schedule();
+            }
+            <ScheduleEdit Model="Model.Schedule" />
+        }
+        else
+        {
+            Model.Schedule = null;
+        }
+
+        @* EventEnrollment *@
+        <MudCheckBox T="bool" Label="Event Enrollment" @bind-Value=" isEventEnrollmentEnabled" />
+        @if (isEventEnrollmentEnabled)
+        {
+            if (Model.EventEnrollment == null)
+            {
+                Model.EventEnrollment = new EventEnrollment();
+            }
+            <EventEnrollmentEdit Model="Model.EventEnrollment" />
+        }
+        else
+        {
+            Model.EventEnrollment = null;
+        }
+    }
+
+</MudPaper>
+</MudForm>
+
+@code {
+    [Parameter, EditorRequired] public BacNet Model { get; set; }
+
+    @* Trendlog *@
+    private bool isTrendlogEnabled;
+
+    @* Schedule *@
+    private bool isScheduleEnabled;
+
+    @* EventEnrollment *@
+    private bool isEventEnrollmentEnabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //prüft beim laden ob die Objekte bereits vorhanden sind und akivert die check boxes
+        if (Model.Schedule != null)
+        {
+            isScheduleEnabled = true;
+        }
+        if (Model.Trendlog != null)
+        {
+            isTrendlogEnabled = true;
+        }
+        if (Model.EventEnrollment != null)
+        {
+            isEventEnrollmentEnabled = true;
+        }
+    }
+
+    private MudForm form = new();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await form.Validate();
+    }
+}

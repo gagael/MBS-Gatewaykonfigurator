@@ -1,0 +1,109 @@
+﻿@using MBS_Gatewaykonfigurator.Models.BACnet
+@using MBS_Gatewaykonfigurator.Models.BACnet.Types
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h6">Analog</MudText>
+
+    <MudGrid>
+
+        <!-- BacUnits als Dropdown -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="uint" @bind-Value="Model.BacUnits" For="@(() => Model.BacUnits)" Label="Bac Units" Variant="Variant.Outlined"
+                       Required="true"
+                       Immediate=true>
+                @foreach (var unit in Units.BACnetEngineeringUnits)
+                {
+                    <MudSelectItem Value="@unit.Key">@unit.Value (@unit.Key)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- BacCovIncrement -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.BacCovIncrement" For="@(() => Model.BacCovIncrement)"
+                          Label="Bac COV Increment"
+                          Immediate=true
+                          Clearable=true
+                          Variant="Variant.Outlined" />
+        </MudItem>
+
+        <!-- BacResolution -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.BacResolution" For="@(() => Model.BacResolution)"
+                          Label="Bac Resolution"
+                          Immediate=true
+                          Clearable=true
+                          Variant="Variant.Outlined" />
+        </MudItem>
+
+        <!-- BacMinPresValue -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.BacMinPresValue" For="@(() => Model.BacMinPresValue)"
+                          Label="Bac Min Pres Value"
+                          Immediate=true
+                          Clearable=true
+                          Variant="Variant.Outlined" />
+        </MudItem>
+
+        <!-- BacMaxPresValue -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.BacMaxPresValue" For="@(() => Model.BacMaxPresValue)"
+                          Immediate=true
+                          Clearable=true
+                          Label="Bac Max Pres Value"
+                          Variant="Variant.Outlined" />
+        </MudItem>
+
+        <!-- BacRelinquishDefault -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.BacRelinquishDefault" For="@(() => Model.BacRelinquishDefault)"
+                          Immediate=true
+                          Clearable=true
+                          Label="Bac Relinquish Default"
+                          Variant="Variant.Outlined" />
+        </MudItem>
+
+    </MudGrid>
+
+    @* Alarming *@
+    <MudCheckBox T="bool" Label="Alarming" @bind-Value=" isAlarmingEnabled" />
+    @if (isAlarmingEnabled)
+    {
+        if (Model.Alarming == null)
+        {
+            Model.Alarming = new Alarming.Analog();
+        }
+
+        <AlarmingEdit Model="Model.Alarming" />
+    }
+    else
+    {
+        Model.Alarming = null;
+    }
+
+
+</MudPaper>
+
+
+<MudDivider Class="my-4" />
+
+
+@code {
+    [Parameter, EditorRequired] public Analog Model { get; set; }
+
+    private bool isAlarmingEnabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //prüft beim laden ob die Objekte bereits vorhanden sind und akivert die check boxes
+        if (Model.Alarming != null)
+        {
+            isAlarmingEnabled = true;
+        }
+    }
+}

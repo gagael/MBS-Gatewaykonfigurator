@@ -1,0 +1,77 @@
+﻿@using MBS_Gatewaykonfigurator.Components.Pages.MbsForm
+@using MBS_Gatewaykonfigurator.Models.BACnet.Types
+
+<MudText Typo="Typo.h6">Event Enrollment</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+
+    <ElementAppendixEdit Model="Model" />
+
+    <MudGrid>
+
+        <!-- Event Type -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="EventEnrollment.EventType"
+                       @bind-Value="Model.BacEventType" For="@(() => Model.BacEventType)"
+                       Label="Event Type"
+                       Variant="Variant.Outlined"
+                       Required="true"
+                       Immediate=true>
+                @foreach (var eventType in Enum.GetValues(typeof(EventEnrollment.EventType)).Cast<EventEnrollment.EventType>())
+                {
+                    <MudSelectItem Value="@eventType">
+                        @($"{eventType} ({(int)eventType})")
+                    </MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- Event Parameters -->
+        <MudItem xs="12" sm="12">
+            <MudTextField T="string"
+                          @bind-Value="Model.BacEventParameters" For="@(() => Model.BacEventParameters)"
+                          Label="Event Parameters"
+                          Variant="Variant.Outlined"
+                          Required=true
+                          Immediate=true
+                          AutoGrow
+                          Lines="4" />
+        </MudItem>
+
+    </MudGrid>
+
+    @* Alarming *@
+    <MudCheckBox T="bool" Label="Alarming" @bind-Value=" isAlarmingEnabled" />
+    @if (isAlarmingEnabled)
+    {
+        if (Model.Alarming == null)
+        {
+            Model.Alarming = new Alarming.TrendLogAndEventEnrollment();
+        }
+
+        <AlarmingEdit Model="Model.Alarming" />
+    }
+    else
+    {
+        Model.Alarming = null;
+    }
+
+</MudPaper>
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired]
+    public EventEnrollment Model { get; set; }
+
+    private bool isAlarmingEnabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //prüft beim laden ob die Objekte bereits vorhanden sind und akivert die check boxes
+        if (Model.Alarming != null)
+        {
+            isAlarmingEnabled = true;
+        }
+    }
+}

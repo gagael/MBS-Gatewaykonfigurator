@@ -1,0 +1,22 @@
+﻿@using MBS_Gatewaykonfigurator.Models.BACnet.Types
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudText Typo="Typo.h6">Calender</MudText>
+
+    <MudStack Spacing="2">
+        <MudTextField @bind-Value="Model.BacDateList"
+                      For="@(() => Model.BacDateList)"
+                      Label="Date List"
+                      AutoGrow
+                      Variant="Variant.Outlined"
+                      Lines="3"
+                      Immediate=true />
+    </MudStack>
+</MudPaper>
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired]
+    public Calender Model { get; set; }
+}

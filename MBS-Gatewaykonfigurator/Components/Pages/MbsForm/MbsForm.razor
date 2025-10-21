@@ -1,0 +1,110 @@
+﻿@using MBS_Gatewaykonfigurator.Models.MBS
+
+<MudPaper Class="pa-4">
+
+    <MudText Typo="Typo.h6">MBS</MudText>
+
+    <MudGrid>
+
+        <!-- Typ (Enum Select) -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="Mbs.TypesMBS"
+                       @bind-Value="Model.TypMbs"
+                       For="@(() => Model.TypMbs)"
+                       Label="Typ"
+                       Required="true"
+                       Immediate=true
+                       Variant="Variant.Outlined">
+                @foreach (var type in Enum.GetValues(typeof(Mbs.TypesMBS)).Cast<Mbs.TypesMBS>())
+                {
+                    <MudSelectItem Value="@type">@GetTypeDescription(type)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- Name -->
+        @* <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.Name"
+                          For="@(() => Model.Name)"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Required="true" />
+        </MudItem> *@
+
+        <!-- Format -->
+        @* <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.Format"
+                          For="@(() => Model.Format)"
+                          Label="Format"
+                          Variant="Variant.Outlined" />
+        </MudItem> *@
+
+        <!-- Query -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.Query"
+                          For="@(() => Model.Query)"
+                          Label="Query"
+                          Immediate=true
+                          Clearable="true"
+                          Variant="Variant.Outlined" />
+        </MudItem>
+
+        <!-- WriteCache -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="string"
+                       @bind-Value="Model.WriteCache"
+                       For="@(() => Model.WriteCache)"
+                       Label="WriteCache"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       Immediate=true>
+                @foreach (string s in new String[] { "no", "yes" })
+                {
+                    <MudSelectItem T="string" Value="@s">@s</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- Zusätzliche Configs -->
+        <MudItem xs="12" sm="12">
+            <MudTextField T="string"
+                          @bind-Value="Model.ZusätzlicheConfigs"
+                          For="@(() => Model.ZusätzlicheConfigs)"
+                          Label="Zusätzliche Configs"
+                          Immediate=true
+                          Variant="Variant.Outlined"
+                          AutoGrow
+                          Lines="4" />
+        </MudItem>
+
+    </MudGrid>
+
+</MudPaper>
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired] public Mbs Model { get; set; }
+
+    private string GetTypeDescription(Mbs.TypesMBS type)
+    {
+        switch (type)
+        {
+            case Mbs.TypesMBS.M:
+                return "M – Ganzzahl (r)";
+            case Mbs.TypesMBS.S:
+                return "S – Ganzzahl (r/w)";
+            case Mbs.TypesMBS.X:
+                return "X – Analogwert (r)";
+            case Mbs.TypesMBS.Y:
+                return "Y – Analogwert (r/w)";
+            case Mbs.TypesMBS.A:
+                return "A – String";
+            default:
+                return type.ToString();
+        }
+    }
+}

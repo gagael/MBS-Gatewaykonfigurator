@@ -1,0 +1,385 @@
+﻿@page "/Gerätevorlage/{GerätevorlageId:guid}"
+@using MBS_Gatewaykonfigurator.Components.Pages.BACnetForm
+@using MBS_Gatewaykonfigurator.Components.Pages.MbusForm
+@using MBS_Gatewaykonfigurator.Components.Pages.ModbusForm
+@using MBS_Gatewaykonfigurator.Models.BACnet
+@using MBS_Gatewaykonfigurator.Models.MBS
+@using MBS_Gatewaykonfigurator.Models.MBUS
+@using MBS_Gatewaykonfigurator.Models.Modbus
+@inject GerätevorlageService GerätevorlageService
+@inject NavigationManager Navigation
+@* DialogService *@
+@inject IDialogService DialogService
+
+<MudPaper Class="pa-4">
+    @if (gerätevorlage != null)
+    {
+        <MudText Typo="Typo.h4">Gerätevorlage</MudText>
+
+        <MudForm @ref="formHeader">
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Label="Name"
+                                  @bind-Value="gerätevorlage.Name"
+                                  Required="true"
+                                  Immediate="true" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudSelect Label="Quellprotokoll"
+                               @bind-Value="gerätevorlage.QuellProtokoll"
+                               Required="true"
+                               Disabled="@ProtokolleAbgeschlossen">
+                        @foreach (var protokoll in quellProtokolle)
+                        {
+                            <MudSelectItem Value="@protokoll">@protokoll</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudSelect Label="Zielprotokoll"
+                               @bind-Value="gerätevorlage.ZielProtokoll"
+                               Required="true"
+                               Disabled="@ProtokolleAbgeschlossen">
+                        @foreach (var protokoll in zielProtokolle)
+                        {
+                            <MudSelectItem Value="@protokoll">@protokoll</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+
+        @if (ProtokolleAbgeschlossen)
+        {
+            @if (!editingElement)
+            {
+                <MudDivider Class="my-4" />
+
+                <MudText Typo="Typo.h5">Gerätevorlage-Elemente</MudText>
+
+                <MudForm @ref="form" Model="@gerätevorlage">
+
+                    <MudText>Ausgewählt (@selectedItems?.Count): @(selectedItems == null ? "" : string.Join(", ", selectedItems.OrderBy(x => x.BeschreibungAppendix).Select(x => x.BeschreibungAppendix)))</MudText>
+                    <MudTable Items="gerätevorlage.GerätevorlageElements"
+                              Dense="true"
+                              FixedHeader="true"
+                              Height="60vh"
+                              Hover="true"
+                              Bordered="true"
+                              Striped="true"
+                              MultiSelection="true"
+                              @bind-SelectedItems="selectedItems">
+
+                        <HeaderContent>
+                            <MudTh><MudTableSortLabel SortBy="new Func<GerätevorlageElement, object>(x => getButtonTxtDispatchToString(x.Quelle))">Quelle</MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<GerätevorlageElement, object>(x => x.Dispatch.ToString())">Dispatch</MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<GerätevorlageElement, object>(x => getButtonTxtDispatchToString(x.Ziel))">Ziel</MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<GerätevorlageElement, object>(x => x.BeschreibungAppendix)">Beschreibung Appendix</MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<GerätevorlageElement, object>(x => x.NamenAppendix)">Namen Appendix</MudTableSortLabel></MudTh>
+                        </HeaderContent>
+
+                        <RowTemplate Context="row">
+                            <MudTd>
+                                    <MudButton StartIcon="@Icons.Material.Outlined.EditNote"
+                                               Color="Color.Primary"
+                                           OnClick="@(() => EditQuelle(row))">
+                                           @getButtonTxtDispatchToString(row.Quelle)</MudButton>
+                            </MudTd>
+                            <MudTd>
+                                 <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Start">
+                                    <MudTextField Label="Threshold"
+                                                  @bind-Value="row.Dispatch.Threshold"
+                                                  For="@(() => row.Dispatch.Threshold)"
+                                                  Size="Size.Small"
+                                                  Immediate="true" />
+                                    <MudTextField Label="Value"
+                                                  @bind-Value="row.Dispatch.Value"
+                                                  For="@(() => row.Dispatch.Value)"
+                                                  Size="Size.Small"
+                                                  Immediate="true" />
+                                    <MudTextField T="uint?"
+                                                  Label="Prio"
+                                                  @bind-Value="row.Dispatch.Prio"
+                                                  For="@(() => row.Dispatch.Prio)"
+                                                  Size="Size.Small"
+                                                  Immediate="true" />
+                                </MudStack>
+                            </MudTd>
+                            <MudTd>
+                                <MudButton StartIcon="@Icons.Material.Outlined.EditNote"
+                                               Color="Color.Primary"
+                                               OnClick="@(() => EditZiel(row))" >
+                                             @getButtonTxtDispatchToString(row.Ziel)</MudButton>
+                            </MudTd>
+                            <MudTd>
+                                <MudTextField @bind-Value="row.BeschreibungAppendix"
+                                              For="@(() => row.BeschreibungAppendix)"
+                                              Required="true"
+                                              Immediate="true" />
+                            </MudTd>
+                            <MudTd>
+                                <MudTextField @bind-Value="row.NamenAppendix"
+                                              For="@(() => row.NamenAppendix)"
+                                              Required="true"
+                                              Immediate="true" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudForm>
+
+                <MudToolBar>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy" OnClick="CopyElemente" />
+                    <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick="AddElement" />
+                    <MudIconButton Icon="@Icons.Material.Outlined.Remove" OnClick="RemoveElemente" />
+                    <MudIconButton Icon="@Icons.Material.Outlined.Save" Color="Color.Primary" OnClick="Speichern" />
+                </MudToolBar>
+            }
+            else
+            {
+                <MudDivider Class="my-4" />
+
+                if (editingMBUS != null)
+                {
+                    <MbusForm Model="editingMBUS" />
+                }
+                else if (editingBACnet != null)
+                {
+                    <BACnetForm Model="editingBACnet" />
+                }
+                else if (editingModbusMasterSeriell != null)
+                {
+                    <ModbusMasterSeriellEdit Model="editingModbusMasterSeriell" />
+                }
+                else if (editingModbusTcpIp != null)
+                {
+                    <ModbusTcpIpEdit Model="editingModbusTcpIp" />
+                }
+
+                <MudToolBar>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Outlined.Save" Color="Color.Primary" OnClick="SaveEdit" />
+                </MudToolBar>
+            }
+        }
+        else
+        {
+            <MudText>Bitte wählen Sie Quell- und Zielprotokoll aus, um fortzufahren.</MudText>
+        }
+    }
+    else
+    {
+        <MudText>Gerätevorlage wird geladen...</MudText>
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public Guid GerätevorlageId { get; set; }
+
+    private Gerätevorlage? gerätevorlage;
+    private HashSet<GerätevorlageElement> selectedItems = new();
+    private MudForm form = new();
+    private MudForm formHeader = new();
+
+    private List<string> quellProtokolle = new();
+    private List<string> zielProtokolle = new();
+
+    private bool editingElement = false;
+
+    //protocolls
+    private Mbus? editingMBUS = new();
+    private ModbusMasterSeriell? editingModbusMasterSeriell = new();
+    private ModbusTcpIp? editingModbusTcpIp = new();
+    private BacNet? editingBACnet = new();
+
+
+    private GerätevorlageElement? currentEditingElement;
+
+    private bool ProtokolleAbgeschlossen =>
+        !string.IsNullOrWhiteSpace(gerätevorlage?.QuellProtokoll) &&
+        !string.IsNullOrWhiteSpace(gerätevorlage?.ZielProtokoll);
+
+    protected override async Task OnInitializedAsync()
+    {
+        quellProtokolle = new List<string>
+        {
+            $"{nameof(Mbus)}",
+             $"{nameof(ModbusMasterSeriell)}",
+            $"{nameof(ModbusTcpIp)}"
+        };
+
+        zielProtokolle = new List<string>
+        {
+            $"{nameof(BacNet)}"
+        };
+
+        gerätevorlage = await GerätevorlageService.LoadOneAsync(GerätevorlageId) ?? new Gerätevorlage
+        {
+            Id = GerätevorlageId
+        };
+
+        //NullReferenceException
+        gerätevorlage.GerätevorlageElements ??= new List<GerätevorlageElement>();
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await formHeader.Validate();
+        await form.Validate();
+    }
+
+    private string getButtonTxtDispatchToString(Mbs? mbs)
+    {
+        try
+        {
+            return ((IDispatchable?)mbs)?.toStringDispatch() ?? "";
+        }
+        catch (Exception ex)
+        {
+            return $"Fehler: {ex.Message}";
+        }
+    }
+
+    private void AddElement()
+    {
+        gerätevorlage!.GerätevorlageElements.Add(new GerätevorlageElement(gerätevorlage.QuellProtokoll, gerätevorlage.ZielProtokoll));
+    }
+
+    private void CopyElemente()
+    {
+        if (selectedItems.Count == 0) return;
+
+        var copies = selectedItems.Select(g => CloneService.Clone(g)).ToList();
+
+        gerätevorlage!.GerätevorlageElements.AddRange(copies!);
+    }
+
+    private async void RemoveElemente()
+    {
+        //Lösch-Dialog
+        var parameters = new DialogParameters<DeleteDialog>
+        {
+            { x => x.ContentText, "Möchten Sie diese Einträge wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden." },
+            { x => x.ButtonText, "Löschen" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Löschen", parameters, options);
+
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled)
+        {
+            return;
+        }
+
+        foreach (var element in selectedItems.ToList())
+        {
+            gerätevorlage!.GerätevorlageElements.Remove(element);
+        }
+        selectedItems.Clear();
+
+        StateHasChanged();
+    }
+
+    private async Task Speichern()
+    {
+        await form.Validate();
+        await formHeader.Validate();
+        if (gerätevorlage != null){
+            await GerätevorlageService.SaveOneAsync(gerätevorlage);
+        }
+    }
+    private bool isEditingQuelle;
+
+    private void resetEdit()
+    {
+        editingMBUS = null;
+        editingModbusMasterSeriell = null;
+        editingModbusTcpIp = null;
+        editingBACnet = null;
+
+    }
+
+    private void EditQuelle(GerätevorlageElement row)
+    {
+        resetEdit();
+        isEditingQuelle = true;
+        editingElement = true;
+        currentEditingElement = row;
+        // MBUS Model aus der Quelle laden
+        // editingMBUS = row.Quelle as Mbus ?? new Mbus();
+      
+        if (row.Quelle is Mbus Mbus)
+        {
+            editingMBUS = Mbus;
+        }
+        else if (row.Quelle is ModbusMasterSeriell ModbusMasterSeriell)
+        {
+            editingModbusMasterSeriell = ModbusMasterSeriell;
+        }
+        else if (row.Quelle is ModbusTcpIp ModbusTcpIp)
+        {
+            editingModbusTcpIp = ModbusTcpIp;
+        }
+        else
+        {
+            throw new InvalidCastException(
+                $"Quelle von Typ {row.Quelle?.GetType().Name} ist nicht implementiert"
+            );
+        }
+    }
+
+    private void EditZiel(GerätevorlageElement row)
+    {
+        resetEdit();
+        isEditingQuelle = false;
+        editingElement = true;
+        currentEditingElement = row;
+        // MBUS Model aus der Quelle laden
+        // editingMBUS = row.Quelle as Mbus ?? new Mbus();
+        if (row.Ziel is BacNet BacNet)
+        {
+            editingBACnet = BacNet;
+        }
+
+        else
+        {
+            throw new InvalidCastException(
+                $"Quelle von Typ {row.Ziel?.GetType().Name} ist nicht implementiert"
+            );
+        }
+    }
+
+    private async Task SaveEdit()
+    {
+        if (currentEditingElement != null)
+        {
+            if (isEditingQuelle)
+            {
+                if (editingMBUS != null) 
+                    currentEditingElement.Quelle = editingMBUS;
+                if (editingModbusMasterSeriell != null)
+                    currentEditingElement.Quelle = editingModbusMasterSeriell;
+                if (editingModbusTcpIp != null)
+                    currentEditingElement.Quelle = editingModbusTcpIp;
+            }
+            else
+            {
+                if (editingBACnet != null) 
+                    currentEditingElement.Ziel = editingBACnet;
+            }
+
+
+            editingElement = false;
+            currentEditingElement = null;
+        }
+        resetEdit();
+
+        await Speichern();
+    }
+
+}

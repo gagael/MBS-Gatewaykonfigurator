@@ -1,0 +1,138 @@
+﻿@using MBS_Gatewaykonfigurator.Models.BACnet.Types
+@typeparam TAlarming where TAlarming : MBS_Gatewaykonfigurator.Models.BACnet.Types.Alarming, new()
+
+<MudPaper Class="pa-4 mt-4">
+    <MudText Typo="Typo.h6">Alarming</MudText>
+
+    <MudGrid>
+
+        <!-- Allgemeine Alarming-Felder -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string" @bind-Value="Model.BacTimeDelay" For="@(() => Model.BacTimeDelay)" Label="Time Delay" Variant="Variant.Outlined" />
+        </MudItem>
+
+        @* Event Enable *@
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string" @bind-Value="Model.BacEventEnable" For="@(() => Model.BacEventEnable)" Label="Event Enable" Variant="Variant.Outlined" Required="true" />
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudSelect T="string" @bind-Value="Model.BacNotifyType" For="@(() => Model.BacNotifyType)" Label="Notify Type"
+                       Variant="Variant.Outlined"
+                       Required="true"
+                       Immediate=true>
+                @foreach (string s in new string[] { "alarm", "event" })
+                {
+                    <MudSelectItem Value="@s">@s</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudNumericField T="byte" @bind-Value="Model.BacNotificationClass" For="@(() => Model.BacNotificationClass)" Label="Notification Class" Variant="Variant.Outlined" Required="true" Immediate=true />
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudTextField T="string" @bind-Value="Model.BacEventMessageText" For="@(() => Model.BacEventMessageText)" Label="Event Message Text" Variant="Variant.Outlined" Immediate=true />
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudTextField T="string" @bind-Value="Model.BacRecipientList" For="@(() => Model.BacRecipientList)" Label="Recipient List" Variant="Variant.Outlined" Immediate=true />
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudSelect T="string" @bind-Value="Model.IntrinsicReporting" For="@(() => Model.IntrinsicReporting)" Label="Intrinsic Reporting"
+                       Variant="Variant.Outlined"
+                       Immediate=true
+                       Clearable="true">
+                @foreach (string s in new string[] { "0", "1" })
+                {
+                    <MudSelectItem Value="@s">@s</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- Spezifische Felder je Untertyp -->
+        @if (Model is Alarming.Binary binary)
+        {
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string" @bind-Value="binary.BacAlarmValue" For="@(() => binary.BacAlarmValue)" Label="Alarm Value"
+                           Variant="Variant.Outlined"
+                           Immediate=true
+                           Required="true">
+                    @foreach (string s in new string[] { "0", "1" })
+                    {
+                        <MudSelectItem Value="@s">@s</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        }
+        else if (Model is Alarming.Analog analog)
+        {
+            @* Limit Enable als Select mit 0/1 *@
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string" @bind-Value="analog.BacLimitEnable" For="@(() => analog.BacLimitEnable)" Label="Limit Enable"
+                           Variant="Variant.Outlined"
+                           Immediate=true
+                           Clearable="true">
+                    @foreach (string s in new string[] { "0", "1" })
+                    {
+                        <MudSelectItem Value="@s">@s</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" @bind-Value="analog.BacLowLimit" For="@(() => analog.BacLowLimit)" Label="Low Limit" Variant="Variant.Outlined" Immediate=true />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" @bind-Value="analog.BacHighLimit" For="@(() => analog.BacHighLimit)" Label="High Limit" Variant="Variant.Outlined" Immediate=true />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" @bind-Value="analog.BacDeadband" For="@(() => analog.BacDeadband)" Label="Deadband" Variant="Variant.Outlined" Immediate=true />
+            </MudItem>
+        }
+        else if (Model is Alarming.Multistate multistate)
+        {
+            <MudItem xs="12">
+                <MudTextField T="string" @bind-Value="multistate.BacAlarmValues" For="@(() => multistate.BacAlarmValues)" Label="Alarm Values" Variant="Variant.Outlined" Immediate=true />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" @bind-Value="multistate.BacFaultValues" For="@(() => multistate.BacFaultValues)" Label="Fault Values" Variant="Variant.Outlined" Immediate=true />
+            </MudItem>
+        }
+        /*
+        else if (Model is Alarming.LifeSafety lifeSafety)
+        {
+        <MudItem xs="12">
+        <MudTextField T="string" @bind-Value="lifeSafety.BacLifeSafetyAlarmValues" For="@(() => lifeSafety.BacLifeSafetyAlarmValues)" Label="Life Safety Alarm Values" Variant="Variant.Outlined"/>
+        </MudItem>
+        <MudItem xs="12">
+        <MudTextField T="string" @bind-Value="lifeSafety.BacAlarmValues" For="@(() => lifeSafety.BacAlarmValues)" Label="Alarm Values" Variant="Variant.Outlined"/>
+        </MudItem>
+        <MudItem xs="12">
+        <MudTextField T="string" @bind-Value="lifeSafety.BacFaultValues" For="@(() => lifeSafety.BacFaultValues)" Label="Fault Values" Variant="Variant.Outlined"/>
+        </MudItem>
+        }
+        */
+        else if (Model is Alarming.TrendLogAndEventEnrollment trend)
+        {
+            <MudItem xs="12">
+                <MudTextField T="string" @bind-Value="trend.BacEventMessageTextsConfig" For="@(() => trend.BacEventMessageTextsConfig)" Label="Event Message Texts Config" Variant="Variant.Outlined" Immediate=true />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" @bind-Value="trend.BacNotificationThreshold" For="@(() => trend.BacNotificationThreshold)" Label="Notification Threshold" Variant="Variant.Outlined" Immediate=true />
+            </MudItem>
+        }
+
+    </MudGrid>
+</MudPaper>
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired]
+    public TAlarming Model { get; set; }
+}

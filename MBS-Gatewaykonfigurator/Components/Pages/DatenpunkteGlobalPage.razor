@@ -1,0 +1,354 @@
+﻿@page "/GlobaleDatenpunkte/{Id:guid}"
+@using MBS_Gatewaykonfigurator.Components.Pages.BACnetForm
+@using MBS_Gatewaykonfigurator.Components.Pages.MbsForm
+@using MBS_Gatewaykonfigurator.Models
+@using MBS_Gatewaykonfigurator.Models.MBS
+@using MBS_Gatewaykonfigurator.Models.BACnet
+@inject GatewayService GatewayService
+@inject NavigationManager Navigation
+@* DialogService *@
+@inject IDialogService DialogService
+
+<MudPaper Class="pa-4">
+    @if (gateway != null)
+    {
+        <MudText Typo="Typo.h4">Globale Datenpunkte für Gateway: @gateway.Name</MudText>
+
+        @if (!editingElement)
+        {
+            <MudText>Ausgewählt (@selectedItems?.Count): @(selectedItems == null ? "" : string.Join(", ", selectedItems.OrderBy(x => x.Name).Select(x => x.Name)))</MudText>
+            <MudForm @ref="form" Model="@datenpunkte">
+                <MudTable Items="datenpunkte"
+                          Dense="true"
+                          FixedHeader="true"
+                          Height="75vh"
+                          MultiSelection="true"
+                          Hover="true"
+                          Bordered="true"
+                          Striped="true"
+                          Style="overflow-x:auto;"
+                          @bind-SelectedItems="selectedItems"
+                          Context="dp">
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<DatenpunktGlobal, object>(x => x.Name)">Name</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<DatenpunktGlobal, object>(x => x.Tag)">Tag</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<DatenpunktGlobal, object>(x => x.Beschreibung)">Beschreibung</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<DatenpunktGlobal, object>(x => x.QuellProtokoll)">Quelle</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<DatenpunktGlobal, object>(x => x.Dispatch.ToString())">Dispatch</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<DatenpunktGlobal, object>(x => x.ZielProtokoll)">Ziel</MudTableSortLabel></MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="dp">
+                        <MudTd>
+                            <MudTextField @bind-Value="dp.Name"
+                                          For="@(() => dp.Name)"
+                                          Placeholder="Name"
+                                          Immediate="true"
+                                          Margin="Margin.Dense"
+                                          Size="Size.Small"
+                                          Style="width: auto; min-width: 290px;" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField @bind-Value="dp.Tag"
+                                          For="@(() => dp.Tag)"
+                                          Placeholder="Tag"
+                                          Immediate="true"
+                                          Margin="Margin.Dense"
+                                          Size="Size.Small"
+                                          Style="width: auto; min-width: 290px;" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField @bind-Value="dp.Beschreibung"
+                                          For="@(() => dp.Beschreibung)"
+                                          Placeholder="Beschreibung"
+                                          Immediate="true"
+                                          Margin="Margin.Dense"
+                                          Size="Size.Small" />
+                        </MudTd>
+
+
+                        <MudTd>
+                             <MudStack Row="true" Spacing="2">
+                            <MudSelect 
+                                        T="string" 
+                                        @bind-Value="dp.QuellProtokoll"
+                                        For="@(() => dp.QuellProtokoll)" 
+                                        Label="Quelle wählen"
+                                        Immediate="true"
+                                        SelectedValuesChanged="@(() => selectionChangedQuelle(dp))"
+                                        Required="true">
+                                @foreach (var option in new string[] { "Keine Quelle", "System" })
+                                {
+                                    <MudSelectItem Value="@option">@option</MudSelectItem>
+                                }
+                            </MudSelect>
+                                <MudButton StartIcon="@Icons.Material.Outlined.EditNote"
+                                                Color="Color.Primary"
+                                                Disabled="string.IsNullOrEmpty(dp.QuellProtokoll)"
+                                                OnClick="@(() => EditQuelle(dp))" >
+                                                @getButtonTxtDispatchToString(dp.Quelle)
+                                  </MudButton>
+                            </MudStack>
+                        </MudTd>
+
+                        <MudTd>
+                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Start">
+                            <MudTextField Label="Threshold"
+                                                @bind-Value="dp.Dispatch.Threshold"
+                                                For="@(() => dp.Dispatch.Threshold)"
+                                            Size="Size.Small"
+                                            Immediate="true" />
+                            <MudTextField Label="Value"
+                                                @bind-Value="dp.Dispatch.Value"
+                                                For="@(() => dp.Dispatch.Value)"
+                                            Size="Size.Small"
+                                            Immediate="true" />
+                            <MudTextField T="uint?"
+                                            Label="Prio"
+                                                @bind-Value="dp.Dispatch.Prio"
+                                                For="@(() => dp.Dispatch.Prio)"
+                                            Size="Size.Small"
+                                            Immediate="true" />
+                            </MudStack>
+                        </MudTd>
+                                    
+                        <MudTd>
+                             <MudStack Row="true" Spacing="2">
+                            <MudSelect T="string" 
+                                        @bind-Value="dp.ZielProtokoll"
+                                           For="@(() => dp.ZielProtokoll)"
+                                           Label="Ziel wählen"
+                                        Immediate="true"
+                                        Required="true">
+                                @foreach (var option in new string[] { "BacNet" })
+                                {
+                                    <MudSelectItem Value="@option">@option</MudSelectItem>
+                                }
+                            </MudSelect>
+                                <MudButton StartIcon="@Icons.Material.Outlined.EditNote"
+                                            Color="Color.Primary"
+                                            Disabled="string.IsNullOrEmpty(dp.ZielProtokoll)"
+                                            OnClick="@(() => EditZiel(dp))" >
+                                        @getButtonTxtDispatchToString(dp.Ziel)
+                             </MudButton>
+                            </MudStack>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudForm>
+
+            <MudToolBar Class="mt-4">
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy" OnClick="CopyDatenpunkte" />
+                <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick="AddDatenpunkt" />
+                <MudIconButton Icon="@Icons.Material.Outlined.Remove" OnClick="RemoveDatenpunkte" />
+                <MudIconButton Icon="@Icons.Material.Outlined.Save" Color="Color.Primary" OnClick="Speichern" />
+            </MudToolBar>
+        }
+        else
+        {
+            <MudDivider Class="my-4" />
+            @if (editingSystemMbs != null)
+            {
+                <SystemForm Model="editingSystemMbs" />
+            }
+            else if (editingBacNet != null)
+            {
+                <BACnetForm Model="editingBacNet" />
+            }
+
+            <MudToolBar Class="mt-4">
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Outlined.Save" Color="Color.Primary" OnClick="SaveEdit" />
+            </MudToolBar>
+        }
+    }
+    else
+    {
+        <MudText>Gateway wird geladen...</MudText>
+    }
+</MudPaper>
+
+@code {
+        [Parameter] public Guid Id { get; set; }
+
+    private Gateway? gateway;
+    private List<DatenpunktGlobal> datenpunkte = new();
+    private HashSet<DatenpunktGlobal> selectedItems = new();
+    private MudForm form = new();
+
+    private bool editingElement = false;
+    private bool editingQuelle = false;
+
+    private DatenpunktGlobal? currentEditingDP;
+    private SystemMbs? editingSystemMbs;
+    private BacNet? editingBacNet;
+
+    protected override async Task OnInitializedAsync()
+    {
+        gateway = await GatewayService.LoadOneAsync(Id);
+        if (gateway == null)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        datenpunkte = gateway.DatenpunkteGlobal ?? new List<DatenpunktGlobal>();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await form.Validate();
+    }
+
+    private void selectionChangedQuelle(DatenpunktGlobal dp)
+    {
+        if (dp.QuellProtokoll == "System")
+        {
+            dp.Quelle = new SystemMbs();
+        }
+        else 
+        {
+            dp.Quelle = null;
+        }
+    }
+
+    private string getButtonTxtDispatchToString(Mbs? mbs)
+    {
+        try
+        {
+            return ((IDispatchable?)mbs)?.toStringDispatch() ?? "";
+        }
+        catch (Exception ex)
+        {
+            return $"Fehler: {ex.Message}";
+        }
+    }
+
+    private void AddDatenpunkt()
+    {
+        datenpunkte.Add(new DatenpunktGlobal("Keine Quelle", nameof(BacNet)));
+    }
+
+    private async void RemoveDatenpunkte()
+    {        
+        //Lösch-Dialog
+        var parameters = new DialogParameters<DeleteDialog>
+        {
+            { x => x.ContentText, "Möchten Sie diese Einträge wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden." },
+            { x => x.ButtonText, "Löschen" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Löschen", parameters, options);
+
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled)
+        {
+            return;
+        }
+
+        foreach (var dp in selectedItems.ToList())
+            datenpunkte.Remove(dp);
+
+        selectedItems.Clear();
+
+        StateHasChanged();
+    }
+
+    private void CopyDatenpunkte()
+    {
+        if (selectedItems.Count == 0) return;
+
+        var copies = selectedItems.Select(dp => CloneService.Clone(dp)).ToList();
+
+        foreach (var copy in copies)
+        {
+            copy!.Name += " (Kopie)";
+        }
+
+        datenpunkte.AddRange(copies!);
+    }
+
+    private async Task Speichern()
+    {
+        if (gateway != null)
+        {
+            gateway.DatenpunkteGlobal = datenpunkte;
+            await GatewayService.SaveOneAsync(gateway);
+        }
+
+        await form.Validate();
+    }
+
+    private void resetEdit()
+    {
+        editingSystemMbs = null;
+        editingBacNet = null;
+    }
+
+    private void EditQuelle(DatenpunktGlobal dpContext)
+    {
+        resetEdit();
+        editingElement = true;
+        editingQuelle = true;
+        currentEditingDP = dpContext;
+
+        if (dpContext.QuellProtokoll == "System")
+        {
+            if (dpContext.Quelle == null)
+            {
+                dpContext.Quelle = new SystemMbs();
+            }
+
+            editingSystemMbs = dpContext.Quelle as SystemMbs;
+
+        }
+        else
+        {
+            editingSystemMbs = null;
+        }
+    }
+
+    private void EditZiel(DatenpunktGlobal dp)
+    {
+        resetEdit();
+        editingQuelle = false;
+        editingElement = true;
+        currentEditingDP = dp;
+        if (dp.ZielProtokoll == "BacNet")
+        {
+            editingBacNet = dp.Ziel as BacNet;
+        }
+        else
+        {
+            editingBacNet = null;
+        }
+
+    }
+
+
+
+    private async Task SaveEdit()
+    {
+        if (currentEditingDP != null)
+        {
+            if (editingQuelle)
+            {
+                currentEditingDP.Quelle = editingSystemMbs;
+            }
+            else
+            {
+                currentEditingDP.Ziel = editingBacNet;
+            }
+
+            editingElement = false;
+            currentEditingDP = null;
+        }
+        resetEdit();
+
+       await Speichern();
+    }
+}

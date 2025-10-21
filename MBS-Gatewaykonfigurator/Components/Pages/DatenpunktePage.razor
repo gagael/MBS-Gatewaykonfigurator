@@ -1,0 +1,355 @@
+﻿@page "/Gateway/{Id:guid}"
+@using MBS_Gatewaykonfigurator.Models
+@inject GatewayService GatewayService
+@inject NavigationManager Navigation
+@inject GerätevorlageService GerätevorlageService
+@* DialogService *@
+@inject IDialogService DialogService
+
+<MudPaper Class="pa-4">
+
+    @if (gateway != null)
+    {
+        <MudText Typo="Typo.h4">Gateway Details</MudText>
+        <MudForm @ref="formHeader" Model="@gateway">
+            <MudGrid>
+            
+            
+                <MudItem xs="12" sm="6">
+                    <MudTextField Label="Name"
+                                  @bind-Value="gateway.Name"
+                                  For="@(() => gateway.Name)"
+                                  Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Label="Beschreibung"
+                                  @bind-Value="gateway.Beschreibung"
+                                  For="@(() => gateway.Beschreibung)"
+                                  Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField Label="Geräte Id"
+                                     @bind-Value="gateway.GeräteId"
+                                     For="@(() => gateway.GeräteId)"
+                                     Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Label="Anzahl Dispatch"
+                                     @bind-Value="gateway.AnzahlDispatch"
+                                     For="@(() => gateway.AnzahlDispatch)"
+                                     ReadOnly
+                                     />
+                                 
+                </MudItem>
+            
+
+           
+            </MudGrid>
+        </MudForm>
+        
+
+        <MudDivider Class="my-4" />
+
+        <MudText Typo="Typo.h5">Datenpunkte</MudText>
+        <MudText>Ausgewählt (@selectedItems?.Count): @(selectedItems == null ? "" : string.Join(", ", selectedItems.OrderBy(x => x.Name).Select(x => x.Name)))</MudText>
+        <MudForm @ref="form" Model="@gateway.Datenpunkte">
+            <MudTable Items="gateway.Datenpunkte"
+                      Dense="true"
+                      FixedHeader="true"
+                      Height="60vh"
+                      MultiSelection="true"
+                      Hover="true"
+                      Bordered="true"
+                      Striped="true"
+                      Style="overflow-x:auto;"
+                      @bind-SelectedItems="selectedItems">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<Datenpunkt, object>(x => x.Name)">Name</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<Datenpunkt, object>(x => x.Tag)">Tag</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<Datenpunkt, object>(x => x.Beschreibung)">Beschreibung</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<Datenpunkt, object>(x => x.Gerätevorlage)">Gerätevorlage</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<Datenpunkt, object>(x => x.Quelladresse)">Quelladresse</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<Datenpunkt, object>(x => x.Zieladresse)">Zieladresse</MudTableSortLabel></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudTextField T="string"
+                                      @bind-Value="context.Name"
+                                      For="@(() => context.Name)"
+                                      Required="true"
+                                      Immediate="true"
+                                      Margin="Margin.Dense"
+                                      Style="width: auto; min-width: 290px;" />
+                  
+                    </MudTd>
+                    <MudTd>
+                        <MudTextField T="string"
+                                      @bind-Value="context.Tag"
+                                      For="@(() => context.Tag)"
+                                      Immediate="true"
+                                      Margin="Margin.Dense"
+                                      Style="width: auto; min-width: 290px;" />
+                    </MudTd>
+                    <MudTd>
+                        <MudTextField T="string"
+                                      @bind-Value="context.Beschreibung"
+                                      For="@(() => context.Beschreibung)"
+                                      Required="true"
+                                      Immediate="true"
+                                      Margin="Margin.Dense"
+                                      Style="width: auto; min-width: 600px;" />
+                    </MudTd>
+                    <MudTd>
+                        <MudSelect T="string"
+                                   Label="Gerätevorlage"
+                                   Value="context.Gerätevorlage"
+                                   ValueChanged="(string newValue) => OnGerätevorlageChanged(context, newValue)"
+                                   For="@(() => context.Gerätevorlage)"
+                                   Dense="true"
+                                   Immediate="true">
+                            @foreach (var vorlage in gerätevorlagen)
+                            {
+                                <MudSelectItem Value="@vorlage.Name">@vorlage.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd>
+                        <MudStack Row="true" Spacing="2">
+
+                        @* Quelladresse anzeigen, readonly *@
+@*                         <MudTextField T="string"
+                                      Label="Quelladresse"
+                                      @bind-Value="context.Quelladresse"
+                                      Required="true"
+                                      Immediate="true"
+                                      ReadOnly="true"
+                                      Margin="Margin.Dense"
+                                      For="@(() => context.Quelladresse)" /> *@
+
+                        @* Gerätevorlage ausgewählt? Quelladresse initialisieren *@
+                        @if (!string.IsNullOrWhiteSpace(context.Gerätevorlage))
+                        {
+                            var selectedVorlage = gerätevorlagen.FirstOrDefault(g => g.Name == context.Gerätevorlage && g.ProjektId == gateway.ProjektId);
+
+                            if (selectedVorlage != null && selectedVorlage.GerätevorlageElements.Any())
+                            {
+                                var quelle = context.Quelle;
+
+                                if (quelle is MBS_Gatewaykonfigurator.Models.MBUS.Mbus mbus)
+                                {
+                                    <MudTextField T="string"
+                                                  Label="M-Bus Adresse"
+                                                  @bind-Value="mbus.SlaveGeräteAdresse"
+                                                  For="@(() => mbus.SlaveGeräteAdresse)"
+                                                  Immediate="true"
+                                                  Required="true"
+                                                  Margin="Margin.Dense" />
+
+                                    @* Quelladresse zurückspeichern *@
+                                    context.Quelladresse = mbus.SlaveGeräteAdresse;
+                                    context.Quelle = mbus;
+                                }
+                                else if (quelle is MBS_Gatewaykonfigurator.Models.Modbus.ModbusMasterSeriell modMaster)
+                                {
+                                    <MudTextField T="ushort"
+                                                  Label="Modbus Adresse"
+                                                  @bind-Value="modMaster.SlaveGeräteAdresse"
+                                                  For="@(() => modMaster.SlaveGeräteAdresse)"
+                                                  Immediate="true"
+                                                  Required="true"
+                                                  Margin="Margin.Dense"
+                                                  Style="width: auto; min-width: 120px;" />
+                                           
+
+                                    context.Quelladresse = modMaster.SlaveGeräteAdresse.ToString();
+                                    context.Quelle = modMaster;
+                                }
+                                else if (quelle is MBS_Gatewaykonfigurator.Models.Modbus.ModbusTcpIp modTcp)
+                                {
+                                    <MudTextField T="string"
+                                                  Label="Host"
+                                                  @bind-Value="modTcp.Host"
+                                                  For="@(() => modTcp.Host)"
+                                                  Immediate="true"
+                                                  Required="true"
+                                                  Margin="Margin.Dense"
+                                                  Style="width: auto; min-width: 120px;" />
+
+                                    <MudNumericField T="uint?"
+                                                  Label="Port"
+                                                  @bind-Value="modTcp.Port"
+                                                  For="@(() => modTcp.Port)"
+                                                  Immediate="true"
+                                                  Clearable="true"
+                                                  Margin="Margin.Dense"
+                                                  Style="width: auto; min-width: 120px;" />
+
+
+                                    <MudNumericField T="byte"
+                                                    Label="Modbus Adresse"
+                                                    @bind-Value="modTcp.ServerAdresse"
+                                                    For="@(() => modTcp.ServerAdresse)"
+                                                    Min="1"
+                                                    Max="255"
+                                                    Immediate="true"
+                                                    Required="true"
+                                                    Margin="Margin.Dense"
+                                                    Style="width: auto; min-width: 130px;" />
+
+                                    @* Quelladresse zusammensetzen *@
+                                    var port = modTcp.Port != null ? $":{modTcp.Port}" : "";
+                                    context.Quelladresse = $"{modTcp.Host}{port} {modTcp.ServerAdresse}";
+                                    context.Quelle = modTcp;
+                                }
+                            }
+                        }
+                        </MudStack>
+                    </MudTd>
+                    <MudTd>
+                        <MudTextField T="string"
+                                      @bind-Value="context.Zieladresse"
+                                      For="@(() => context.Zieladresse)"
+                                      Required="true"
+                                      Immediate="true"
+                                      Disabled="true" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudForm>
+
+        <MudToolBar>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy" OnClick="CopyDatenpunkte" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick="AddDatenpunkt" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Remove" OnClick="RemoveDatenpunkte" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Save" Color="Color.Primary" OnClick="Speichern" />
+        </MudToolBar>
+    }
+    else
+    {
+        <MudText>Gateway wird geladen...</MudText>
+    }
+
+</MudPaper>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Gateway? gateway;
+    private HashSet<Datenpunkt> selectedItems = new();
+    private MudForm form = new();
+    private MudForm formHeader = new();
+
+    // Gerätevorlagen-Dropdown
+    private List<Gerätevorlage> gerätevorlagen = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        gateway = await GatewayService.LoadOneAsync(Id);
+        if (gateway == null)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        // Gerätevorlagen laden
+        var allGerätevorlagen = await GerätevorlageService.LoadAsync();
+
+        gerätevorlagen = allGerätevorlagen
+            .Where(g => g != null && g.ProjektId == gateway.ProjektId && g.GerätevorlageElements.Count > 0)
+            .OrderBy(g => g.Name)
+            .ToList();
+
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await form.Validate();
+        await formHeader.Validate();
+    }
+
+
+    private void AddDatenpunkt()
+    {
+        gateway!.Datenpunkte.Add(new Datenpunkt());
+    }
+
+    private async void RemoveDatenpunkte()
+    {        
+        //Lösch-Dialog
+        var parameters = new DialogParameters<DeleteDialog>
+        {
+            { x => x.ContentText, "Möchten Sie diese Einträge wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden." },
+            { x => x.ButtonText, "Löschen" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Löschen", parameters, options);
+
+
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled)
+        {
+            return;
+        }
+        foreach (var dp in selectedItems.ToList())
+        {
+            gateway!.Datenpunkte.Remove(dp);
+        }
+        selectedItems.Clear();
+
+        StateHasChanged();
+    }
+
+    private void CopyDatenpunkte()
+    {
+        var copies = selectedItems.Select(x => CloneService.Clone(x)).ToList();
+
+        foreach (var copy in copies)
+        {
+            copy!.Name += " (Kopie)";
+        }
+
+        gateway!.Datenpunkte.AddRange(copies!);
+    }
+
+    private async Task Speichern()
+    {
+        await formHeader.Validate();
+        await form.Validate();
+
+        if (gateway != null)
+        {
+            await GatewayService.SaveOneAsync(gateway);
+        }
+    }
+
+    private void OnGerätevorlageChanged(Datenpunkt context, string newValue)
+    {
+        context.Gerätevorlage = newValue;
+        context.Quelladresse = string.Empty;
+        context.Quelle = null;
+
+        // Vorlage finden
+        var selectedVorlage = gerätevorlagen
+            .FirstOrDefault(g => g.Name == newValue && g.ProjektId == gateway!.ProjektId);
+
+        if (selectedVorlage != null && selectedVorlage.GerätevorlageElements.Any())
+        {
+            var quelle = selectedVorlage.GerätevorlageElements[0].Quelle;
+
+            if (quelle is MBS_Gatewaykonfigurator.Models.MBUS.Mbus)
+                context.Quelle = new MBS_Gatewaykonfigurator.Models.MBUS.Mbus();
+            else if (quelle is MBS_Gatewaykonfigurator.Models.Modbus.ModbusMasterSeriell)
+                context.Quelle = new MBS_Gatewaykonfigurator.Models.Modbus.ModbusMasterSeriell();
+            else if (quelle is MBS_Gatewaykonfigurator.Models.Modbus.ModbusTcpIp)
+                context.Quelle = new MBS_Gatewaykonfigurator.Models.Modbus.ModbusTcpIp();
+        }
+
+    }
+
+}

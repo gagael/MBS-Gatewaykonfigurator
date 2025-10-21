@@ -1,0 +1,41 @@
+﻿@using MBS_Gatewaykonfigurator.Models.MBS
+
+<MudPaper Class="pa-4">
+
+    <MudText Typo="Typo.h6">Element Appendix</MudText>
+
+    <MudGrid>
+
+        <!-- Name Appendix -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.NamenAppendix"
+                          For="@(() => Model.NamenAppendix)"
+                          Label="Namen Appendix"
+                          Immediate=true
+                          Required=true
+                          Variant="Variant.Outlined" />
+        </MudItem>
+
+        <!-- Beschreibung Appendix -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.BeschreibungAppendix"
+                          For="@(() => Model.BeschreibungAppendix)"
+                          Label="Beschreibung Appendix"
+                          Immediate=true
+                          Required=true
+                          Variant="Variant.Outlined" />
+        </MudItem>
+
+    </MudGrid>
+
+</MudPaper>
+
+<MudDivider Class="my-4" />
+
+@code {
+
+    [Parameter, EditorRequired] public ElementAppendix Model { get; set; }
+
+}

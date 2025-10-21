@@ -1,0 +1,105 @@
+﻿@using MBS_Gatewaykonfigurator.Components.Pages.MbsForm
+@using MBS_Gatewaykonfigurator.Models.Modbus
+
+<MbsForm Model="Model" />
+
+<MudForm @ref="form" Model="@Model">
+<MudPaper Class="pa-4 mb-4">
+
+    <MudText Typo="Typo.h6">ModbusMasterSeriell</MudText>
+
+    <MudGrid>
+
+        <!-- Slave Adresse -->
+        @* <MudItem xs="12" sm="6">
+            <MudTextField T="ushort"
+                          Label="Slave Geräte Adresse"
+                          Variant="Variant.Outlined"
+                          @bind-Value="Model.SlaveGeräteAdresse"
+                          For="@(() => Model.SlaveGeräteAdresse)" />
+        </MudItem> *@
+
+        <!-- RegisterTyp -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="ModbusMasterSeriell.ModbusRegister"
+                       @bind-Value="Model.RegisterTyp"
+                       For="@(() => Model.RegisterTyp)"
+                       Label="Register Typ"
+                       Variant="Variant.Outlined"
+                       Immediate="true"
+                       Required="true">
+                @foreach (var modbusRegister in Enum.GetValues(typeof(ModbusMasterSeriell.ModbusRegister)).Cast<ModbusMasterSeriell.ModbusRegister>())
+                {
+                    <MudSelectItem Value="@modbusRegister">@modbusRegister</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        @if (Model.RegisterTyp != ModbusMasterSeriell.ModbusRegister.failure)
+        {
+            <!-- Register Adresse -->
+            <MudItem xs="12" sm="6">
+                    <MudNumericField T="ushort?"
+                              @bind-Value="Model.RegisterAdresse"
+                              For="@(() => Model.RegisterAdresse)"
+                              Label="Register Adresse"
+                              Variant="Variant.Outlined"
+                              Clearable="true"
+                              Immediate="true"
+                              Required="true"
+                                Min="0" 
+                                Max=65535 />
+            </MudItem>
+
+            <!-- Register Adresse Bit -->
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="byte?"
+                                    Label="Bit"
+                                     @bind-Value="Model.RegisterAdresseBit"
+                                     For="@(() => Model.RegisterAdresseBit)"
+                                     Variant="Variant.Outlined"
+                                    Clearable="true"
+                                    Immediate="true"
+                                    Min="1"
+                                    Max="16" />
+            </MudItem>
+
+            <!-- Format -->
+            <MudItem xs="12" sm="6">
+                <MudSelect T="ModbusMasterSeriell.ModbusFormat?"
+                           @bind-Value="Model.FormatModbus"
+                           For="@(() => Model.FormatModbus)"
+                           Label="Format"
+                           Variant="Variant.Outlined"
+                           Clearable="true"
+                           Immediate="true">
+                    @foreach (var format in Enum.GetValues(typeof(ModbusMasterSeriell.ModbusFormat)).Cast<ModbusMasterSeriell.ModbusFormat>())
+                    {
+                        <MudSelectItem Value="@((ModbusMasterSeriell.ModbusFormat?)format)">@format</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        }
+        else
+        {
+            Model.RegisterAdresse = null;
+            Model.RegisterAdresseBit = null;
+            Model.FormatModbus = null;
+        }
+
+    </MudGrid>
+</MudPaper>
+</MudForm >
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired]
+    public ModbusMasterSeriell Model { get; set; }
+
+    private MudForm form = new();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await form.Validate();
+    }
+}

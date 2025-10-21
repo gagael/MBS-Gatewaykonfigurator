@@ -1,0 +1,203 @@
+﻿@using MBS_Gatewaykonfigurator.Components.Pages.MbsForm
+@using MBS_Gatewaykonfigurator.Models.Modbus
+
+<MbsForm Model="Model" />
+
+<MudForm @ref="form" Model="@Model">
+<MudPaper Class="pa-4 mb-4">
+
+    <MudText Typo="Typo.h6">ModbusTcpIp</MudText>
+
+    <MudGrid>
+        @* 
+        <!-- Host -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          Label="Host / IP"
+                          Variant="Variant.Outlined"
+                          @bind-Value="Model.Host"
+                          For="@(() => Model.Host)"
+                          Required="true" />
+        </MudItem>
+
+        <!-- Port -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="uint?"
+                          Label="Port"
+                          Variant="Variant.Outlined"
+                          Clearable="true"
+                          @bind-Value="Model.Port"
+                          For="@(() => Model.Port)" />
+        </MudItem>
+
+        <!-- ServerAdresse -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="byte"
+                          Label="Server Adresse"
+                          Variant="Variant.Outlined"
+                          @bind-Value="Model.ServerAdresse"
+                          For="@(() => Model.ServerAdresse)" />
+        </MudItem> *@
+
+        <!-- Register Typ -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="ModbusTcpIp.ModbusRegister"
+                       Label="Register Typ"
+                       Variant="Variant.Outlined"
+                       Immediate="true"
+                       Required="true"
+                       @bind-Value="Model.RegisterTyp"
+                       For="@(() => Model.RegisterTyp)">
+                @foreach (var modbusRegister in Enum.GetValues(typeof(ModbusTcpIp.ModbusRegister)).Cast<ModbusTcpIp.ModbusRegister>())
+                {
+                    <MudSelectItem Value="@modbusRegister">@modbusRegister</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+    @if ( Model.RegisterTyp != ModbusTcpIp.ModbusRegister.failure)
+    {
+
+                <!-- Register Adresse -->
+        <MudItem xs="12" sm="6">
+            <MudNumericField T="ushort?"
+                          Label="Register Adresse"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          Required="true"
+                          @bind-Value="Model.RegisterAdresse"
+                          For="@(() => Model.RegisterAdresse)" />
+        </MudItem>
+
+        if (Model.FormatModbus == ModbusTcpIp.ModbusFormat.BIT)
+        {
+            <!-- Register Adresse Bit -->
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="byte?"
+                Label="Register Adresse Bit"
+                Variant="Variant.Outlined"
+                Clearable="true"
+                Immediate="true"
+                Min="0"
+                Max="15"
+                @bind-Value="Model.RegisterAdresseBit"
+                For="@(() => Model.RegisterAdresseBit)" />
+            </MudItem>
+        }
+        else if (Model.FormatModbus == ModbusTcpIp.ModbusFormat.UINT8 || Model.FormatModbus == ModbusTcpIp.ModbusFormat.SINT8)
+        {
+            <!-- Register Adresse Bit -->
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="byte?"
+                Label="Register Adresse Bit"
+                Variant="Variant.Outlined"
+                Clearable="true"
+                Immediate="true"
+                Min="0"
+                Max="1"
+                @bind-Value="Model.RegisterAdresseBit"
+                For="@(() => Model.RegisterAdresseBit)" />
+            </MudItem>
+        }
+        else
+        {
+            Model.RegisterAdresseBit = null;
+        }
+
+        <!-- Format -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="ModbusTcpIp.ModbusFormat?"
+                       Label="Format"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       @bind-Value="Model.FormatModbus"
+                       For="@(() => Model.FormatModbus)">
+                @foreach (var format in Enum.GetValues(typeof(ModbusTcpIp.ModbusFormat)).Cast<ModbusTcpIp.ModbusFormat>())
+                {
+                   <MudSelectItem Value="@( (ModbusTcpIp.ModbusFormat?)format )">@format</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- Swap -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="ModbusTcpIp.Swaps?"
+                       Label="Swap"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       Immediate="true"
+                       @bind-Value="Model.Swap"
+                       For="@(() => Model.Swap)">
+                @foreach (var swap in Enum.GetValues(typeof(ModbusTcpIp.Swaps)).Cast<ModbusTcpIp.Swaps>())
+                {
+                    <MudSelectItem Value="@((ModbusTcpIp.Swaps?)swap)">@swap</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- Factor -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          Label="Factor"
+                          Variant="Variant.Outlined"
+                          Clearable="true"
+                          Immediate="true"
+                          @bind-Value="Model.Factor"
+                          For="@(() => Model.Factor)" />
+        </MudItem>
+
+        <!-- Offset -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          Label="Offset"
+                          Variant="Variant.Outlined"
+                          @bind-Value="Model.Offset"
+                          For="@(() => Model.Offset)"
+                          Clearable="true"
+                          Immediate="true" />
+        </MudItem>
+
+        <!-- Mode -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="ModbusTcpIp.Modes?"
+                       Label="Mode"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       Immediate="true"
+                       @bind-Value="Model.Mode"
+                       For="@(() => Model.Mode)">
+                @foreach (var mode in Enum.GetValues(typeof(ModbusTcpIp.Modes)).Cast<ModbusTcpIp.Modes>())
+                {
+                    <MudSelectItem Value="@((ModbusTcpIp.Modes?)mode)">@mode</MudSelectItem>
+                }
+            </MudSelect>
+                </MudItem>
+    }
+    else
+    {
+        Model.RegisterAdresse = null;
+        Model.RegisterAdresseBit = null;
+        Model.FormatModbus = null;
+        Model.Swap = null;
+        Model.Factor = null;
+        Model.Offset = null;
+        Model.Mode = null;
+    }
+
+    </MudGrid>
+
+</MudPaper>
+</MudForm >
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired]
+    public ModbusTcpIp Model { get; set; }
+
+    private MudForm form = new();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await form.Validate();
+    }
+}

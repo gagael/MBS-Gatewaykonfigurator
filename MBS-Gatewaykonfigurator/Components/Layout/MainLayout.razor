@@ -1,0 +1,64 @@
+﻿@inherits LayoutComponentBase
+
+@* added MudBlazor*@
+@* Required *@
+<MudThemeProvider />
+<MudPopoverProvider />
+@* Needed for dialogs *@
+<MudDialogProvider FullWidth="true"
+                   MaxWidth="MaxWidth.ExtraSmall"
+                   CloseButton="true"
+                   BackdropClick="false"
+                   NoHeader="true"
+                   Position="DialogPosition.Center"
+                   CloseOnEscapeKey="true" />
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+@* Darkmode *@
+<MudThemeProvider @bind-IsDarkMode="_isDarkMode" />
+
+@inject IJSRuntime JSRuntime
+
+<MudLayout>
+    <MudAppBar>
+        @* <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" /> *@
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" Color="@Color.Inherit" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowForward" OnClick="GoForward" Color="@Color.Inherit" />
+        <MudText Typo="Typo.h6" Class="ml-8">MBS-Gatewaykonfigurator</MudText>
+        <MudSpacer />
+        @* Darkmode button *@
+        <MudToggleIconButton @bind-Toggled="@_isDarkMode" Icon="@Icons.Material.Filled.DarkMode" Color="@Color.Inherit" ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="Color.Inherit" ></MudToggleIconButton>
+    </MudAppBar>
+   @*Drawer *@
+@*  <MudDrawer @bind-Open="@_drawerOpen">
+      <NavMenu />
+    </MudDrawer> *@
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout>
+@code {
+
+    //drawer
+    /*
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+    */
+
+    //Darkmode
+    private bool _isDarkMode = true;
+
+    //Navigation
+    //Quelle: https://stackoverflow.com/questions/62561926/blazor-navigation-manager-go-back
+
+    private async Task GoBack() =>
+        await JSRuntime.InvokeVoidAsync("history.back");
+
+    private async Task GoForward() =>
+        await JSRuntime.InvokeVoidAsync("history.forward");
+
+}

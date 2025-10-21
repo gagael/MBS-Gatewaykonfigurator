@@ -1,0 +1,32 @@
+﻿@using MBS_Gatewaykonfigurator.Models.MBS
+
+<MbsForm Model="Model" />
+
+<MudPaper Class="pa-4 mb-4">
+    <MudText Typo="Typo.h6">System</MudText>
+
+    <MudGrid>
+
+        <!-- Type -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="SystemMbs.SystemTypes"
+                       @bind-Value="Model.TypeSystem"
+                       For="@(() => Model.TypeSystem)"
+                       Label="Type"
+                       Variant="Variant.Outlined"
+                       Required="true">
+                @foreach (var t in Enum.GetValues(typeof(SystemMbs.SystemTypes)).Cast<SystemMbs.SystemTypes>())
+                {
+                    <MudSelectItem Value="@t">@($"{t} ({(int)t})")</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+    </MudGrid>
+</MudPaper>
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired] public SystemMbs Model { get; set; }
+}

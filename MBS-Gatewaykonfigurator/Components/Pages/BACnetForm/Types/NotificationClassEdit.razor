@@ -1,0 +1,42 @@
+﻿@using MBS_Gatewaykonfigurator.Models.BACnet.Types
+
+<MudPaper Class="pa-4 mt-4">
+    <MudText Typo="Typo.h6">Notification Class</MudText>
+
+    <MudGrid>
+        <MudItem xs="12" sm="6">
+            <MudTextField @bind-Value="Model.BacAckRequired"
+                          For="@(() => Model.BacAckRequired)"
+                          Label="Ack Required"
+                          Variant="Variant.Outlined"
+                          Required="true" />
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudTextField @bind-Value="Model.BacPriority"
+                          For="@(() => Model.BacPriority)"
+                          Label="Priority"
+                          Variant="Variant.Outlined"
+                          Required="true" />
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudTextField @bind-Value="Model.BacRecipientList"
+                          For="@(() => Model.BacRecipientList)"
+                          Label="Recipient List"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          AutoGrow
+                          Lines="3"
+                          FullWidth="true"
+                          Text="@Model.BacRecipientList" />
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired]
+    public NotificationClass Model { get; set; }
+}

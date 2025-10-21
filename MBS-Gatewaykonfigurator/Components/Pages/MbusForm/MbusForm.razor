@@ -1,0 +1,99 @@
+﻿@using MBS_Gatewaykonfigurator.Components.Pages.MbsForm
+@using MBS_Gatewaykonfigurator.Models.BACnet
+@using MBS_Gatewaykonfigurator.Models.MBUS;
+
+<MbsForm Model="Model" />
+
+<MudForm @ref="form" Model="@Model">
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h6" Class="mb-2">M-Bus</MudText>
+
+    <MudGrid>
+
+        @*<MudItem xs="12" sm="6" hidden="true">
+            <MudTextField Label="Slave Adresse"
+                          @bind-Value="Model.SlaveGeräteAdresse"
+                          Required="true"
+                          Immediate="true" />
+        </MudItem>*@
+
+        <MudItem xs="12" sm="6">
+            <MudSelect T="Mbus.Types"
+                       @bind-Value="Model.Typ"
+                       For="@(() => Model.Typ)"
+                       Label="Typ"
+                       Required="true"
+                       Immediate=true
+                       Variant="Variant.Outlined">
+                @foreach (var t in Enum.GetValues(typeof(Mbus.Types)).Cast<Mbus.Types>())
+                {
+                    <MudSelectItem T="Mbus.Types" Value="@t">@t.ToString()</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        @if (Model.Typ.Equals(Mbus.Types.value) || Model.Typ.Equals(Mbus.Types.vif) || Model.Typ.Equals(Mbus.Types.sBit))
+        {
+            if (Model.Typ.Equals(Mbus.Types.sBit))
+            {
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="byte?"
+                                     @bind-Value="Model.RegisterAdresse"
+                                     For="@(() => Model.RegisterAdresse)"
+                                     Label="Register Adresse"
+                                     Immediate="true"
+                                     Required="true"
+                                     Min="1"
+                                     Max="8"
+                                     Variant="Variant.Outlined" />
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="byte?"
+                                     @bind-Value="Model.RegisterAdresse"
+                                     For="@(() => Model.RegisterAdresse)"
+                                     Label="Register Adresse"
+                                     Immediate="true"
+                                     Required="true"
+                                     Variant="Variant.Outlined" />
+                </MudItem>
+            }
+
+            <MudItem xs="12" sm="6">
+                <MudSelect T="Mbus.MbusFormat?"
+                           @bind-Value="Model.FormatMbus"
+                           For="@(() => Model.FormatMbus)"
+                           Label="Format"
+                           Clearable="true"
+                           Immediate="true"
+                           Variant="Variant.Outlined">
+                    @foreach (var f in Enum.GetValues(typeof(Mbus.MbusFormat)).Cast<Mbus.MbusFormat>())
+                    {
+                        <MudSelectItem T="Mbus.MbusFormat?" Value="@f">@f.ToString()</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        }
+        else
+        {
+            Model.RegisterAdresse = null;
+            Model.FormatMbus = null;
+        }
+
+    </MudGrid>
+</MudPaper>
+</MudForm >
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired] public Mbus Model { get; set; }
+
+    private MudForm form = new();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await form.Validate();
+    }
+}

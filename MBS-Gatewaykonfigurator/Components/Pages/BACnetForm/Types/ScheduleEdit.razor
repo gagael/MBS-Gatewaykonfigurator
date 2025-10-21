@@ -1,0 +1,91 @@
+﻿@using MBS_Gatewaykonfigurator.Components.Pages.MbsForm
+@using MBS_Gatewaykonfigurator.Models.BACnet.Types
+@using System.ComponentModel.DataAnnotations
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudText Typo="Typo.h6">Schedule</MudText>
+
+    <ElementAppendixEdit Model="Model" />
+
+    <MudGrid>
+
+        <!-- Effective Period -->
+        <MudItem xs="12" sm="6">
+            <MudTextField @bind-Value="Model.BacEffectivePeriod"
+                          For="@(() => Model.BacEffectivePeriod)"
+                          Label="Effective Period"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          Immediate=true />
+        </MudItem>
+
+        <!-- Out Of Service -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="string"
+                       @bind-Value="Model.BacOutOfService"
+                       Label="Out Of Service"
+                       Variant="Variant.Outlined"
+                       Immediate=true
+                       Required="true">
+                @foreach (string s in new string[] { "0", "1" })
+                {
+                    <MudSelectItem Value="@s">@s</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- Schedule Default -->
+        <MudItem xs="12" sm="6">
+            <MudTextField @bind-Value="Model.BacScheduleDefault"
+                          For="@(() => Model.BacScheduleDefault)"
+                          Label="Schedule Default"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          Immediate=true />
+        </MudItem>
+
+        <!-- Priority For Writing -->
+        <MudItem xs="12" sm="6">
+            <MudNumericField T="uint?"
+                             @bind-Value="Model.BacPriorityForWriting"
+                             Label="Priority For Writing"
+                             Variant="Variant.Outlined"
+                             Immediate=true
+                             Min="1"
+                             Max="16"
+                             Placeholder="1 - 16"
+                             Clearable="true" />
+        </MudItem>
+
+        <!-- Weekly Schedule -->
+        <MudItem xs="12" sm="12">
+            <MudTextField @bind-Value="Model.BacWeeklySchedule"
+                          For="@(() => Model.BacWeeklySchedule)"
+                          Label="Weekly Schedule"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          Immediate=true
+                          AutoGrow
+                          Lines="4" />
+        </MudItem>
+
+        <!-- Exception Schedule -->
+        <MudItem xs="12" sm="12">
+            <MudTextField @bind-Value="Model.BacExceptionSchedule"
+                          For="@(() => Model.BacExceptionSchedule)"
+                          Label="Exception Schedule"
+                          Variant="Variant.Outlined"
+                          Immediate=true
+                          AutoGrow
+                          Lines="4" />
+        </MudItem>
+
+    </MudGrid>
+</MudPaper>
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired]
+    public Schedule Model { get; set; }
+}

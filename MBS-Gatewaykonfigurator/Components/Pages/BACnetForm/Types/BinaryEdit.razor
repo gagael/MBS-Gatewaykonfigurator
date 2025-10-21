@@ -1,0 +1,79 @@
+﻿@using MBS_Gatewaykonfigurator.Models.BACnet.Types
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h6">Binary</MudText>
+    <MudGrid>
+
+        <!-- BacPolarity -->
+        <MudItem xs="12" sm="6">
+            <MudNumericField T="uint"
+                             @bind-Value="Model.BacPolarity" For="@(() => Model.BacPolarity)"
+                             Label="Bac Polarity"
+                             Variant="Variant.Outlined"
+                             Min="0" Max="1"
+                             Immediate="true" />
+        </MudItem>
+
+        <!-- BacActiveText -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.BacActiveText" For="@(() => Model.BacActiveText)"
+                          Label="Bac Active Text"
+                          Immediate=true
+                          Variant="Variant.Outlined" />
+        </MudItem>
+
+        <!-- BacInactiveText -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.BacInactiveText" For="@(() => Model.BacInactiveText)"
+                          Label="Bac Inactive Text"
+                          Variant="Variant.Outlined"
+                          Immediate=true />
+        </MudItem>
+
+        <!-- BacRelinquishDefault -->
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string"
+                          @bind-Value="Model.BacRelinquishDefault" For="@(() => Model.BacRelinquishDefault)"
+                          Label="Bac Relinquish Default"
+                          Variant="Variant.Outlined"
+                          Immediate=true />
+        </MudItem>
+
+    </MudGrid>
+
+    @* Alarming *@
+    <MudCheckBox T="bool" Label="Alarming" @bind-Value=" isAlarmingEnabled" />
+    @if (isAlarmingEnabled)
+    {
+        if (Model.Alarming == null)
+        {
+            Model.Alarming = new Alarming.Binary();
+        }
+
+        <AlarmingEdit Model="Model.Alarming" />
+    }
+    else
+    {
+        Model.Alarming = null;
+    }
+
+</MudPaper>
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired] public Binary Model { get; set; }
+
+    private bool isAlarmingEnabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //prüft beim laden ob die Objekte bereits vorhanden sind und akivert die check boxes
+        if (Model.Alarming != null)
+        {
+            isAlarmingEnabled = true;
+        }
+    }
+}

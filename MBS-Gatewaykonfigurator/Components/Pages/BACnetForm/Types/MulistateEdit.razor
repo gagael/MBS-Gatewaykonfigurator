@@ -1,0 +1,61 @@
+﻿@using MBS_Gatewaykonfigurator.Models.BACnet.Types
+<MudPaper Class="pa-4" Elevation="2">
+    <MudText Typo="Typo.h6">Multistate</MudText>
+
+    <MudNumericField T="byte"
+                     @bind-Value="Model.BacNumberOfStates"
+                     For="@(() => Model.BacNumberOfStates)"
+                     Label="Number of States"
+                     Variant="Variant.Outlined"
+                     Required="true"
+                     Immediate=true />
+
+    <MudTextField @bind-Value="Model.BacStateText"
+                  For="@(() => Model.BacStateText)"
+                  Label="State Text"
+                  Variant="Variant.Outlined"
+                  Immediate=true
+                  AutoGrow
+                  Lines="4" />
+
+    <MudTextField @bind-Value="Model.BacRelinquishDefault"
+                  For="@(() => Model.BacRelinquishDefault)"
+                  Label="Relinquish Default"
+                  Variant="Variant.Outlined"
+                  Immediate=true />
+
+    @* Alarming *@
+    <MudCheckBox T="bool" Label="Alarming" @bind-Value=" isAlarmingEnabled" />
+    @if (isAlarmingEnabled)
+    {
+        if (Model.Alarming == null)
+        {
+            Model.Alarming = new Alarming.Multistate();
+        }
+
+        <AlarmingEdit Model="Model.Alarming" />
+    }
+    else
+    {
+        Model.Alarming = null;
+    }
+
+</MudPaper>
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired]
+    public Multistate Model { get; set; }
+
+    private bool isAlarmingEnabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //prüft beim laden ob die Objekte bereits vorhanden sind und akivert die check boxes
+        if (Model.Alarming != null)
+        {
+            isAlarmingEnabled = true;
+        }
+    }
+}

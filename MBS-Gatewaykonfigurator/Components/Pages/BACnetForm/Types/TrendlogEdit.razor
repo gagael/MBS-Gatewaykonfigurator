@@ -1,0 +1,136 @@
+﻿@using MBS_Gatewaykonfigurator.Components.Pages.MbsForm
+@using MBS_Gatewaykonfigurator.Models.BACnet.Types
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h6">Trendlog</MudText>
+
+    <ElementAppendixEdit Model="Model" />
+
+    <MudGrid>
+
+        <!-- Log Enabled -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="string"
+                       @bind-Value="Model.BacLogEnable"
+                       Label="Log Enabled"
+                       Variant="Variant.Outlined"
+                       Required="true"
+                       Immediate=true>
+                @foreach (string s in new string[] { "0", "1" })
+                {
+                    <MudSelectItem Value="@s">@s</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- Stop When Full -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="string"
+                       @bind-Value="Model.BacStopWhenFull"
+                       Label="Stop When Full"
+                       Variant="Variant.Outlined"
+                       Required="true"
+                       Immediate=true>
+                @foreach (string s in new string[] { "0", "1" })
+                {
+                    <MudSelectItem Value="@s">@s</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- Buffer Size -->
+        <MudItem xs="12" sm="6">
+            <MudTextField @bind-Value="Model.BacBufferSize"
+                          For="@(() => Model.BacBufferSize)"
+                          Label="Buffer Size"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          Immediate=true />
+        </MudItem>
+
+        <!-- Logging Type -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="string"
+                       @bind-Value="Model.BacLoggingType"
+                       Label="Logging Type"
+                       Variant="Variant.Outlined"
+                       Required="true"
+                       Immediate=true>
+                @foreach (var option in new[] { ("0", "Polled"), ("1", "COV"), ("2", "Triggered") })
+                {
+                    <MudSelectItem Value="@option.Item1">@option.Item2</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- Log Interval -->
+        <MudItem xs="12" sm="6">
+            <MudTextField @bind-Value="Model.BacLogInterval"
+                          For="@(() => Model.BacLogInterval)"
+                          Label="Log Interval"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          Immediate=true />
+        </MudItem>
+
+        <!-- Align Intervals -->
+        <MudItem xs="12" sm="6">
+            <MudSelect T="string"
+                       @bind-Value="Model.BacAlignIntervals"
+                       Label="Align Intervals"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       Immediate=true>
+                @foreach (string s in new string[] { "0", "1" })
+                {
+                    <MudSelectItem Value="@s">@s</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <!-- Interval Offset -->
+        <MudItem xs="12" sm="6">
+            <MudTextField @bind-Value="Model.BacIntervalOffset"
+                          For="@(() => Model.BacIntervalOffset)"
+                          Label="Interval Offset"
+                          Variant="Variant.Outlined"
+                          Immediate=true />
+        </MudItem>
+
+    </MudGrid>
+
+    @* Alarming *@
+    <MudCheckBox T="bool" Label="Alarming" @bind-Value=" isAlarmingEnabled" />
+    @if (isAlarmingEnabled)
+    {
+        if (Model.Alarming == null)
+        {
+            Model.Alarming = new Alarming.TrendLogAndEventEnrollment();
+        }
+
+        <AlarmingEdit Model="Model.Alarming" />
+    }
+    else
+    {
+        Model.Alarming = null;
+    }
+
+</MudPaper>
+
+<MudDivider Class="my-4" />
+
+@code {
+    [Parameter, EditorRequired]
+    public TrendLog Model { get; set; }
+
+    private bool isAlarmingEnabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //prüft beim laden ob die Objekte bereits vorhanden sind und akivert die check boxes
+        if (Model.Alarming != null)
+        {
+            isAlarmingEnabled = true;
+        }
+    }
+}
